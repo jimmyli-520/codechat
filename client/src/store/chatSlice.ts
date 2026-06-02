@@ -88,7 +88,7 @@ export function formatErrorMessage(message: string) {
     lowerMessage.includes("failed to fetch") ||
     lowerMessage.includes("could not connect")
   ) {
-    return "Ollama is not running or is unreachable. Start Ollama, make sure the selected model is installed, then try again.";
+    return "AI responses require the local CodeChat backend and Ollama to be running. Please run the project locally for full functionality.";
   }
 
   return message;
