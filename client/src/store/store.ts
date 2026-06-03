@@ -71,6 +71,17 @@ const starterCode = `function greet(name) {
 
 console.log(greet("CodeChat"));`;
 
+function getEditorDefaultPrompt(persona: PersonaOption["id"]) {
+  switch (persona) {
+    case "code-reviewer":
+      return "Please review this code for bugs, edge cases, readability, and practical improvements.";
+    case "code-teacher":
+      return "Please explain this code step by step and teach the concepts it uses. Do not focus only on bugs unless there is a clear issue.";
+    case "code-generator":
+      return "Please suggest a cleaner or extended version of this code. The user can provide a specific requirement for better generated code.";
+  }
+}
+
 export function useCodeChatStore() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -557,7 +568,7 @@ export function useCodeChatStore() {
       languageOptions.find((language) => language.id === selectedLanguage)?.label ??
       selectedLanguage;
     const message = [
-      trimmedQuestion || "Please review this code.",
+      trimmedQuestion || getEditorDefaultPrompt(selectedPersona),
       "",
       `Language: ${languageLabel}`,
       "",
