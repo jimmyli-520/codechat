@@ -14,7 +14,7 @@
     "dev:frontend": "npm run dev -w client",
     "dev:backend": "npm run dev -w server",
     "build": "npm run build --workspaces",
-    "test": "npm run test -w server",
+    "test": "npm run test --workspaces",
     "typecheck": "npm run typecheck --workspaces"
   },
   "devDependencies": {

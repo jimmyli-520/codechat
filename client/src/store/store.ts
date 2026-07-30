@@ -23,6 +23,7 @@ import {
   isVisibleMessage,
   toChatHistory
 } from "./chatSlice";
+import { prepareChatMessage } from "./editorContext";
 import { modelOptions } from "./modelSlice";
 import { type PersonaOption, personaOptions } from "./modeSlice";
 
@@ -70,17 +71,6 @@ const starterCode = `function greet(name) {
 }
 
 console.log(greet("CodeChat"));`;
-
-function getEditorDefaultPrompt(persona: PersonaOption["id"]) {
-  switch (persona) {
-    case "code-reviewer":
-      return "Please review this code for bugs, edge cases, readability, and practical improvements.";
-    case "code-teacher":
-      return "Please explain this code step by step and teach the concepts it uses. Do not focus only on bugs unless there is a clear issue.";
-    case "code-generator":
-      return "Please suggest a cleaner or extended version of this code. The user can provide a specific requirement for better generated code.";
-  }
-}
 
 export function useCodeChatStore() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -538,8 +528,19 @@ export function useCodeChatStore() {
       return;
     }
 
+    const languageLabel =
+      languageOptions.find((language) => language.id === selectedLanguage)?.label ??
+      selectedLanguage;
+    const message = prepareChatMessage({
+      code,
+      language: selectedLanguage,
+      languageLabel,
+      persona: selectedPersona,
+      question: trimmedInput
+    });
+
     setInput("");
-    await sendMessage(trimmedInput);
+    await sendMessage(message);
   }
 
   function handleComposerKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -551,8 +552,19 @@ export function useCodeChatStore() {
         return;
       }
 
+      const languageLabel =
+        languageOptions.find((language) => language.id === selectedLanguage)?.label ??
+        selectedLanguage;
+      const message = prepareChatMessage({
+        code,
+        language: selectedLanguage,
+        languageLabel,
+        persona: selectedPersona,
+        question: trimmedInput
+      });
+
       setInput("");
-      void sendMessage(trimmedInput);
+      void sendMessage(message);
     }
   }
 
@@ -567,16 +579,14 @@ export function useCodeChatStore() {
     const languageLabel =
       languageOptions.find((language) => language.id === selectedLanguage)?.label ??
       selectedLanguage;
-    const message = [
-      trimmedQuestion || getEditorDefaultPrompt(selectedPersona),
-      "",
-      `Language: ${languageLabel}`,
-      "",
-      "Code:",
-      `\`\`\`${selectedLanguage}`,
-      trimmedCode || "(No code provided.)",
-      "```"
-    ].join("\n");
+    const message = prepareChatMessage({
+      code: trimmedCode,
+      forceEditorContext: true,
+      language: selectedLanguage,
+      languageLabel,
+      persona: selectedPersona,
+      question: trimmedQuestion
+    });
 
     setInput("");
     await sendMessage(message);
