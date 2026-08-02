@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup and troubleshooting guide
+    url: https://github.com/jimmyli-520/codechat#troubleshooting
+    about: Check the local setup and recovery instructions before filing a bug.
