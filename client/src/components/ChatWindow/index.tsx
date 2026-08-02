@@ -378,7 +378,7 @@ export function ChatWindow({
             }}
             onKeyDown={handleAutocompleteKeyDown}
             onPaste={handlePaste}
-            placeholder="Ask a coding question... Enter to send · Shift+Enter for a new line"
+            placeholder="Ask a coding question..."
             rows={input.includes("\n") ? 5 : 1}
             value={input}
           />
