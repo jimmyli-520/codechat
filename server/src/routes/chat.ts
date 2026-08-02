@@ -4,8 +4,11 @@ import {
   getConversation,
   saveMessage
 } from "../db/pool.js";
-
-const defaultModel = "llama3.2:3b";
+import {
+  fetchInstalledModels,
+  ModelInventoryError,
+  resolveInstalledModel
+} from "../ollama/models.js";
 
 export type Persona = "code-reviewer" | "code-teacher" | "code-generator";
 
@@ -206,12 +209,32 @@ export function createChatRouter(ollamaBaseUrl: string) {
       response: Response<ChatResponse | ApiErrorResponse>
     ) => {
       const message = request.body.message?.trim();
-      const model = request.body.model?.trim() || defaultModel;
       const persona = resolvePersona(request.body.persona);
 
       if (!message) {
         response.status(400).json({
           error: "Message is required"
+        });
+        return;
+      }
+
+      let model: string;
+
+      try {
+        model = resolveInstalledModel({
+          installedModels: await fetchInstalledModels(ollamaBaseUrl),
+          requestedModel: request.body.model
+        });
+      } catch (error) {
+        const status =
+          error instanceof ModelInventoryError && error.code === "MODEL_NOT_INSTALLED"
+            ? 400
+            : 503;
+        response.status(status).json({
+          error:
+            error instanceof ModelInventoryError
+              ? error.message
+              : "Could not validate the selected Ollama model."
         });
         return;
       }
@@ -294,12 +317,31 @@ export function createChatRouter(ollamaBaseUrl: string) {
       response: Response<ApiErrorResponse>
     ) => {
       const message = request.body.message?.trim();
-      const model = request.body.model?.trim() || defaultModel;
       const persona = resolvePersona(request.body.persona);
 
       if (!message) {
         response.status(400).json({
           error: "Message is required"
+        });
+        return;
+      }
+      let model: string;
+
+      try {
+        model = resolveInstalledModel({
+          installedModels: await fetchInstalledModels(ollamaBaseUrl),
+          requestedModel: request.body.model
+        });
+      } catch (error) {
+        const status =
+          error instanceof ModelInventoryError && error.code === "MODEL_NOT_INSTALLED"
+            ? 400
+            : 503;
+        response.status(status).json({
+          error:
+            error instanceof ModelInventoryError
+              ? error.message
+              : "Could not validate the selected Ollama model."
         });
         return;
       }

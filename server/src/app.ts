@@ -5,6 +5,7 @@ import express, {
 } from "express";
 import { createChatRouter } from "./routes/chat.js";
 import { createConversationsRouter } from "./routes/conversations.js";
+import { createModelsRouter } from "./routes/models.js";
 import { createStatsRouter } from "./routes/stats.js";
 
 type CreateAppOptions = {
@@ -44,8 +45,9 @@ export function createApp({
   app.use(corsMiddleware);
   app.options("*", corsMiddleware as RequestHandler);
   app.use(express.json());
-  app.use("/api", createStatsRouter(ollamaBaseUrl));
-  app.use("/api", createConversationsRouter());
+  app.use("/api", createStatsRouter());
+  app.use("/api", createModelsRouter(ollamaBaseUrl));
+  app.use("/api", createConversationsRouter(ollamaBaseUrl));
   app.use("/api", createChatRouter(ollamaBaseUrl));
 
   const handleError: ErrorRequestHandler = (error, _request, response, next) => {

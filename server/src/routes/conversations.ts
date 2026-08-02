@@ -5,8 +5,11 @@ import {
   getConversation,
   listConversations
 } from "../db/pool.js";
-
-const defaultModel = "llama3.2:3b";
+import {
+  fetchInstalledModels,
+  ModelInventoryError,
+  resolveInstalledModel
+} from "../ollama/models.js";
 
 type Persona = "code-reviewer" | "code-teacher" | "code-generator";
 
@@ -26,7 +29,7 @@ function resolvePersona(persona?: string): Persona {
   return "code-teacher";
 }
 
-export function createConversationsRouter() {
+export function createConversationsRouter(ollamaBaseUrl: string) {
   const router = Router();
 
   router.post(
@@ -40,8 +43,29 @@ export function createConversationsRouter() {
       response: Response<Awaited<ReturnType<typeof createConversation>> | ApiErrorResponse>
     ) => {
       const title = request.body.title?.trim() || "New conversation";
-      const model = request.body.model?.trim() || defaultModel;
       const persona = resolvePersona(request.body.persona);
+      let model: string;
+
+      try {
+        model = resolveInstalledModel({
+          installedModels: await fetchInstalledModels(ollamaBaseUrl),
+          requestedModel: request.body.model
+        });
+      } catch (error) {
+        response
+          .status(
+            error instanceof ModelInventoryError && error.code === "MODEL_NOT_INSTALLED"
+              ? 400
+              : 503
+          )
+          .json({
+            error:
+              error instanceof ModelInventoryError
+                ? error.message
+                : "Could not validate the selected Ollama model."
+          });
+        return;
+      }
 
       try {
         const conversation = await createConversation({

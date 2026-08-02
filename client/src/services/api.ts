@@ -5,6 +5,7 @@ import type {
   ConversationSummary
 } from "../store/chatSlice";
 import type { PersonaOption } from "../store/modeSlice";
+import type { ModelOption } from "../store/modelSlice";
 
 type ApiErrorResponse = {
   error?: string;
@@ -115,6 +116,30 @@ export async function deleteConversation(id: string) {
   if (!response.ok) {
     throw new Error(await getApiErrorMessage(response, "Could not delete conversation."));
   }
+}
+
+export async function fetchInstalledModels() {
+  const response = await fetchApi("/api/models");
+  const data = await readApiJson<{ models?: ModelOption[] } & ApiErrorResponse>(
+    response,
+    "Could not load installed Ollama models."
+  );
+
+  if (!response.ok) {
+    throw new Error(getApiErrorFromData(data, "Could not load installed Ollama models."));
+  }
+
+  if (!Array.isArray(data.models)) {
+    throw new Error("Could not load installed Ollama models.");
+  }
+
+  return data.models.filter(
+    (model) =>
+      model &&
+      typeof model.id === "string" &&
+      typeof model.label === "string" &&
+      typeof model.description === "string"
+  );
 }
 
 export async function sendChatMessage({

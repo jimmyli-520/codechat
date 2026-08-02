@@ -60,13 +60,17 @@ type ChatWindowProps = {
   activeModel: ModelOption;
   activePersona: PersonaOption;
   error: string | null;
+  hasAvailableModel: boolean;
   input: string;
   isChatOpen: boolean;
   isLoading: boolean;
+  isModelsLoading: boolean;
   isSettingsOpen: boolean;
   latestMessageRef: RefObject<HTMLDivElement | null>;
   messages: Message[];
   messagesContainerRef: RefObject<HTMLDivElement | null>;
+  modelOptions: ModelOption[];
+  modelsError: string | null;
   selectedModel: string;
   selectedLanguage: LanguageOption["id"];
   selectedPersona: PersonaOption["id"];
@@ -75,6 +79,7 @@ type ChatWindowProps = {
   onComposerKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onInputChange: (value: string) => void;
   onMessagesScroll: () => void;
+  onRefreshModels: () => void;
   onSetChatOpen: (isOpen: boolean) => void;
   onSetSelectedModel: (model: string) => void;
   onSetSelectedPersona: (persona: PersonaOption["id"]) => void;
@@ -144,17 +149,22 @@ export function ChatWindow({
   activeModel,
   activePersona,
   error,
+  hasAvailableModel,
   input,
   isChatOpen,
   isLoading,
+  isModelsLoading,
   isSettingsOpen,
   latestMessageRef,
   messages,
   messagesContainerRef,
+  modelOptions,
+  modelsError,
   onCancel,
   onComposerKeyDown,
   onInputChange,
   onMessagesScroll,
+  onRefreshModels,
   onSetChatOpen,
   onSetSelectedModel,
   onSetSelectedPersona,
@@ -301,7 +311,11 @@ export function ChatWindow({
 
                 <ModelSelector
                   disabled={isLoading}
+                  error={modelsError}
+                  isLoading={isModelsLoading}
+                  models={modelOptions}
                   onChange={onSetSelectedModel}
+                  onRefresh={onRefreshModels}
                   selectedModel={selectedModel}
                 />
 
@@ -411,7 +425,11 @@ export function ChatWindow({
             Stop
           </button>
         ) : (
-          <button className="composer-action" disabled={!input.trim()} type="submit">
+          <button
+            className="composer-action"
+            disabled={!input.trim() || !hasAvailableModel}
+            type="submit"
+          >
             <Send size={16} />
             Send
           </button>

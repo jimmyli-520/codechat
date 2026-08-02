@@ -11,6 +11,7 @@ import {
   deleteConversation,
   fetchConversation,
   fetchConversations,
+  fetchInstalledModels,
   sendChatMessage,
   startChatStream
 } from "../services/api";
@@ -25,7 +26,10 @@ import {
 } from "./chatSlice";
 import { canSubmitComposer, getComposerKeyAction } from "./composerKeyboard";
 import { prepareChatMessage } from "./editorContext";
-import { modelOptions } from "./modelSlice";
+import {
+  type ModelOption,
+  reconcileSelectedModel
+} from "./modelSlice";
 import { type PersonaOption, personaOptions } from "./modeSlice";
 import {
   getCodeForLanguageChange,
@@ -85,7 +89,10 @@ export function useCodeChatStore() {
   const [code, setCode] = useState(starterCodeByLanguage.javascript);
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption["id"]>("javascript");
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState("llama3.2:3b");
+  const [modelOptions, setModelOptions] = useState<ModelOption[]>([]);
+  const [selectedModel, setSelectedModel] = useState("");
+  const [isModelsLoading, setIsModelsLoading] = useState(true);
+  const [modelsError, setModelsError] = useState<string | null>(null);
   const [selectedPersona, setSelectedPersona] = useState<PersonaOption["id"]>("code-teacher");
   const [theme, setTheme] = useState<Theme>("light");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -109,7 +116,22 @@ export function useCodeChatStore() {
   const streamBufferRef = useRef("");
   const streamFlushTimeoutRef = useRef<number | null>(null);
   const streamDrainResolversRef = useRef<Array<() => void>>([]);
-  const activeModel = modelOptions.find((model) => model.id === selectedModel) ?? modelOptions[3];
+  const activeModel = modelOptions.find((model) => model.id === selectedModel) ?? {
+    id: "",
+    label: isModelsLoading
+      ? "Loading models…"
+      : modelsError
+        ? "Ollama unavailable"
+        : "No local model",
+    description: isModelsLoading
+      ? "Checking Ollama"
+      : modelsError
+        ? "Refresh to try again"
+        : "Install a model to chat"
+  };
+  const hasAvailableModel = Boolean(selectedModel) && modelOptions.some(
+    (model) => model.id === selectedModel
+  );
   const activePersona =
     personaOptions.find((persona) => persona.id === selectedPersona) ?? personaOptions[1];
   const showWelcomeHero = !isHistoryOpen && !isEditorOpen && !isChatOpen;
@@ -155,6 +177,7 @@ export function useCodeChatStore() {
 
   useEffect(() => {
     void loadConversations();
+    void refreshModels();
   }, []);
 
   useEffect(() => {
@@ -207,6 +230,32 @@ export function useCodeChatStore() {
     }
   }
 
+  async function refreshModels() {
+    setIsModelsLoading(true);
+    setModelsError(null);
+
+    try {
+      const installedModels = await fetchInstalledModels();
+      setModelOptions(installedModels);
+      setSelectedModel((currentModel) =>
+        reconcileSelectedModel({
+          models: installedModels,
+          selectedModel: currentModel
+        })
+      );
+    } catch (caughtError) {
+      setModelOptions([]);
+      setSelectedModel("");
+      setModelsError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Could not load installed Ollama models."
+      );
+    } finally {
+      setIsModelsLoading(false);
+    }
+  }
+
   function formatTimestamp(timestamp: string) {
     return new Intl.DateTimeFormat(undefined, {
       dateStyle: "medium",
@@ -251,7 +300,12 @@ export function useCodeChatStore() {
       shouldResetMessagesScrollRef.current = true;
       setConversationId(conversation.id);
       setMessages(visibleMessages.length > 0 ? visibleMessages : initialMessages);
-      setSelectedModel(conversation.model);
+      setSelectedModel(
+        reconcileSelectedModel({
+          models: modelOptions,
+          selectedModel: conversation.model
+        })
+      );
       setSelectedPersona(conversation.persona);
       setInput("");
     } catch (caughtError) {
@@ -673,6 +727,11 @@ export function useCodeChatStore() {
       return;
     }
 
+    if (!hasAvailableModel) {
+      setError("Install an Ollama model and refresh the model list before sending a message.");
+      return;
+    }
+
     const languageLabel =
       languageOptions.find((language) => language.id === selectedLanguage)?.label ??
       selectedLanguage;
@@ -692,6 +751,12 @@ export function useCodeChatStore() {
     const action = getComposerKeyAction(event);
 
     if (!canSubmitComposer({ action, input, isLoading })) {
+      return;
+    }
+
+    if (!hasAvailableModel) {
+      event.preventDefault();
+      setError("Install an Ollama model and refresh the model list before sending a message.");
       return;
     }
 
@@ -728,6 +793,11 @@ export function useCodeChatStore() {
     const trimmedCode = code.trim();
 
     if ((!trimmedQuestion && !trimmedCode) || isLoading) {
+      return;
+    }
+
+    if (!hasAvailableModel) {
+      setError("Install an Ollama model and refresh the model list before sending a message.");
       return;
     }
 
@@ -768,6 +838,7 @@ export function useCodeChatStore() {
     handleResizeStart,
     handleSelectConversation,
     handleSubmit,
+    hasAvailableModel,
     historyWidth,
     input,
     isChatOpen,
@@ -775,10 +846,14 @@ export function useCodeChatStore() {
     isEditorOpen,
     isHistoryOpen,
     isLoading,
+    isModelsLoading,
     isSettingsOpen,
     latestMessageRef,
     messages,
     messagesContainerRef,
+    modelOptions,
+    modelsError,
+    refreshModels,
     selectedLanguage,
     selectedModel,
     selectedPersona,

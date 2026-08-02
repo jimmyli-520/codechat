@@ -99,17 +99,22 @@ export function App() {
             activeModel={store.activeModel}
             activePersona={store.activePersona}
             error={store.error}
+            hasAvailableModel={store.hasAvailableModel}
             input={store.input}
             isChatOpen={store.isChatOpen}
             isLoading={store.isLoading}
+            isModelsLoading={store.isModelsLoading}
             isSettingsOpen={store.isSettingsOpen}
             latestMessageRef={store.latestMessageRef}
             messages={store.messages}
             messagesContainerRef={store.messagesContainerRef}
+            modelOptions={store.modelOptions}
+            modelsError={store.modelsError}
             onCancel={store.handleCancel}
             onComposerKeyDown={store.handleComposerKeyDown}
             onInputChange={store.setInput}
             onMessagesScroll={store.handleMessagesScroll}
+            onRefreshModels={() => void store.refreshModels()}
             onSetChatOpen={store.setIsChatOpen}
             onSetSelectedModel={store.setSelectedModel}
             onSetSelectedPersona={store.setSelectedPersona}

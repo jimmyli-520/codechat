@@ -4,25 +4,22 @@ export type ModelOption = {
   description: string;
 };
 
-export const modelOptions: ModelOption[] = [
-  {
-    id: "qwen3:8b",
-    label: "qwen3:8b",
-    description: "Deep reasoning"
-  },
-  {
-    id: "mistral",
-    label: "mistral",
-    description: "Fast & reliable"
-  },
-  {
-    id: "phi4-mini",
-    label: "phi4-mini",
-    description: "Lightweight"
-  },
-  {
-    id: "llama3.2:3b",
-    label: "llama3.2:3b",
-    description: "Quick answers"
+export const preferredDefaultModel = "llama3.2:3b";
+
+export function reconcileSelectedModel({
+  models,
+  selectedModel
+}: {
+  models: ModelOption[];
+  selectedModel: string;
+}) {
+  if (models.some((model) => model.id === selectedModel)) {
+    return selectedModel;
   }
-];
+
+  if (models.some((model) => model.id === preferredDefaultModel)) {
+    return preferredDefaultModel;
+  }
+
+  return models[0]?.id ?? "";
+}
