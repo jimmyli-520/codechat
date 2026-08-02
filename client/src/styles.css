@@ -539,6 +539,21 @@ button:disabled {
   background: #1e1e1e;
 }
 
+.editor-loading {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: #aeb7c2;
+  background: #1e1e1e;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.message-rendering {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .code-chat-button {
   align-self: stretch;
   min-height: 28px;

@@ -1,6 +1,8 @@
-import Editor from "@monaco-editor/react";
 import { ChevronRight, PanelLeftClose, PanelLeftOpen, Wand2 } from "lucide-react";
+import { lazy, Suspense } from "react";
 import { languageOptions, type LanguageOption, type Theme } from "../../store/store";
+
+const MonacoEditor = lazy(() => import("@monaco-editor/react"));
 
 type CodeEditorProps = {
   code: string;
@@ -77,21 +79,29 @@ export function CodeEditor({
       </header>
 
       <div className="editor-frame">
-        <Editor
-          height="100%"
-          language={selectedLanguage}
-          onChange={(value) => onCodeChange(value ?? "")}
-          options={{
-            fontSize: 14,
-            minimap: {
-              enabled: false
-            },
-            scrollBeyondLastLine: false,
-            wordWrap: "on"
-          }}
-          theme={theme === "dark" ? "vs-dark" : "light"}
-          value={code}
-        />
+        <Suspense
+          fallback={
+            <div className="editor-loading" role="status">
+              Loading editor…
+            </div>
+          }
+        >
+          <MonacoEditor
+            height="100%"
+            language={selectedLanguage}
+            onChange={(value) => onCodeChange(value ?? "")}
+            options={{
+              fontSize: 14,
+              minimap: {
+                enabled: false
+              },
+              scrollBeyondLastLine: false,
+              wordWrap: "on"
+            }}
+            theme={theme === "dark" ? "vs-dark" : "light"}
+            value={code}
+          />
+        </Suspense>
       </div>
 
       <button
