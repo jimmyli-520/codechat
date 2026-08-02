@@ -201,3 +201,7 @@ The latest clean-environment verification is recorded in [CodeChat 2.0 release-c
 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, project expectations, required verification, and pull-request guidance.
 
 CodeChat is available under the [MIT License](LICENSE).
+
+## Releases
+
+See the [changelog](CHANGELOG.md) for version history. CodeChat 2.0 release notes and verified installation instructions are available on the [GitHub Releases page](https://github.com/jimmyli-520/codechat/releases/latest).
