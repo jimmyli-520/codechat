@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "workspaces": [
     "client",
     "server"
@@ -13,6 +16,7 @@
     "dev:server": "npm run dev -w server",
     "dev:frontend": "npm run dev -w client",
     "dev:backend": "npm run dev -w server",
+    "setup": "npm run setup -w server",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "typecheck": "npm run typecheck --workspaces"

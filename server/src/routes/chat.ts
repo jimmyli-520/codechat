@@ -259,7 +259,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
       } catch (error) {
         console.error("Error saving chat to PostgreSQL:", error);
         response.status(500).json({
-          error: "Could not save chat to PostgreSQL. Check your database connection and run schema.sql in pgAdmin."
+          error: "Could not save chat to PostgreSQL. Check server/.env and run npm run setup."
         });
         return;
       }
@@ -369,7 +369,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
         } catch (error) {
           console.error("Error saving chat to PostgreSQL:", error);
           response.status(500).json({
-            error: "Could not save chat to PostgreSQL. Check your database connection and run schema.sql in pgAdmin."
+            error: "Could not save chat to PostgreSQL. Check server/.env and run npm run setup."
           });
           return;
         }
