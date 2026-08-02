@@ -190,3 +190,5 @@ For a reproducible dependency installation in CI or a clean checkout, use `npm c
 ## Technology
 
 CodeChat uses React, TypeScript, Vite, Monaco Editor, Express, Ollama, and PostgreSQL. It is organized as npm workspaces under `client/` and `server/`.
+
+For component boundaries, request and streaming flows, persistence, security assumptions, design tradeoffs, and known limitations, see [CodeChat 2.0 architecture](docs/ARCHITECTURE.md).
