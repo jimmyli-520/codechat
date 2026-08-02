@@ -716,6 +716,25 @@ button:disabled {
   word-break: break-word;
 }
 
+.generating-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.message-status {
+  margin-top: 8px !important;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.error-status {
+  color: var(--danger);
+}
+
 .assistant {
   width: min(78ch, 86%);
   max-width: 100%;

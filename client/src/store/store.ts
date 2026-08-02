@@ -33,6 +33,11 @@ import {
   type SupportedLanguage
 } from "./starterCode";
 import { applyStreamEvent } from "./streamEvents";
+import {
+  isNearScrollBottom,
+  streamFrameDelayMs,
+  takeNextStreamFrame
+} from "./streamPresentation";
 
 export type LanguageOption = {
   id: SupportedLanguage;
@@ -98,7 +103,12 @@ export function useCodeChatStore() {
   const settingsMenuRef = useRef<HTMLDivElement | null>(null);
   const latestMessageRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
+  const shouldResetMessagesScrollRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const streamAssistantIdRef = useRef<string | null>(null);
+  const streamBufferRef = useRef("");
+  const streamFlushTimeoutRef = useRef<number | null>(null);
+  const streamDrainResolversRef = useRef<Array<() => void>>([]);
   const activeModel = modelOptions.find((model) => model.id === selectedModel) ?? modelOptions[3];
   const activePersona =
     personaOptions.find((persona) => persona.id === selectedPersona) ?? personaOptions[1];
@@ -120,16 +130,27 @@ export function useCodeChatStore() {
     }) as CSSProperties;
 
   useEffect(() => {
-    if (shouldStickToBottomRef.current) {
-      latestMessageRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+
+    if (!container) {
       return;
     }
 
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = 0;
+    if (shouldResetMessagesScrollRef.current) {
+      container.scrollTop = 0;
+      shouldResetMessagesScrollRef.current = false;
+      return;
     }
 
-    shouldStickToBottomRef.current = true;
+    if (!shouldStickToBottomRef.current) {
+      return;
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
+    });
+
+    return () => window.cancelAnimationFrame(animationFrame);
   }, [messages, isLoading]);
 
   useEffect(() => {
@@ -196,6 +217,7 @@ export function useCodeChatStore() {
   function handleNewChat() {
     abortControllerRef.current?.abort();
     shouldStickToBottomRef.current = false;
+    shouldResetMessagesScrollRef.current = true;
     setIsHistoryOpen(true);
     setIsChatOpen(true);
     setConversationId(null);
@@ -226,6 +248,7 @@ export function useCodeChatStore() {
         }));
 
       shouldStickToBottomRef.current = false;
+      shouldResetMessagesScrollRef.current = true;
       setConversationId(conversation.id);
       setMessages(visibleMessages.length > 0 ? visibleMessages : initialMessages);
       setSelectedModel(conversation.model);
@@ -298,7 +321,8 @@ export function useCodeChatStore() {
         currentMessage.id === assistantMessageId
           ? {
               ...currentMessage,
-              content: assistantContent
+              content: assistantContent,
+              status: "complete"
             }
           : currentMessage
       )
@@ -312,8 +336,105 @@ export function useCodeChatStore() {
         currentMessage.id === assistantMessageId
           ? {
               ...currentMessage,
-              content: currentMessage.content + content
+              content: currentMessage.content + content,
+              status: "streaming"
             }
+          : currentMessage
+      )
+    );
+  }
+
+  function resolveStreamDrain() {
+    if (streamBufferRef.current || streamFlushTimeoutRef.current !== null) {
+      return;
+    }
+
+    const resolvers = streamDrainResolversRef.current.splice(0);
+    resolvers.forEach((resolve) => resolve());
+  }
+
+  function flushStreamFrame() {
+    streamFlushTimeoutRef.current = null;
+    const assistantMessageId = streamAssistantIdRef.current;
+
+    if (!assistantMessageId || !streamBufferRef.current) {
+      resolveStreamDrain();
+      return;
+    }
+
+    const frame = takeNextStreamFrame(streamBufferRef.current);
+    streamBufferRef.current = frame.remaining;
+    appendAssistantContent(assistantMessageId, frame.content);
+
+    if (streamBufferRef.current) {
+      streamFlushTimeoutRef.current = window.setTimeout(flushStreamFrame, streamFrameDelayMs);
+    }
+
+    resolveStreamDrain();
+  }
+
+  function queueAssistantContent(assistantMessageId: string, content: string) {
+    if (streamAssistantIdRef.current !== assistantMessageId) {
+      return;
+    }
+
+    streamBufferRef.current += content;
+
+    if (streamFlushTimeoutRef.current === null) {
+      streamFlushTimeoutRef.current = window.setTimeout(flushStreamFrame, streamFrameDelayMs);
+    }
+  }
+
+  function waitForStreamDrain(assistantMessageId: string) {
+    if (streamAssistantIdRef.current !== assistantMessageId) {
+      return Promise.resolve();
+    }
+
+    if (!streamBufferRef.current && streamFlushTimeoutRef.current === null) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve) => {
+      streamDrainResolversRef.current.push(resolve);
+    });
+  }
+
+  function flushStreamImmediately(assistantMessageId: string) {
+    if (streamAssistantIdRef.current !== assistantMessageId) {
+      return;
+    }
+
+    if (streamFlushTimeoutRef.current !== null) {
+      window.clearTimeout(streamFlushTimeoutRef.current);
+      streamFlushTimeoutRef.current = null;
+    }
+
+    const content = streamBufferRef.current;
+    streamBufferRef.current = "";
+
+    if (content) {
+      appendAssistantContent(assistantMessageId, content);
+    }
+
+    resolveStreamDrain();
+  }
+
+  function startStreamPresentation(assistantMessageId: string) {
+    if (streamFlushTimeoutRef.current !== null) {
+      window.clearTimeout(streamFlushTimeoutRef.current);
+      streamFlushTimeoutRef.current = null;
+    }
+
+    streamBufferRef.current = "";
+    streamDrainResolversRef.current.splice(0).forEach((resolve) => resolve());
+    streamAssistantIdRef.current = assistantMessageId;
+  }
+
+  function setAssistantStatus(assistantMessageId: string, status: Message["status"]) {
+    setMessages((currentMessages) =>
+      currentMessages.map((currentMessage) =>
+        currentMessage.id === assistantMessageId
+          ? { ...currentMessage, status }
           : currentMessage
       )
     );
@@ -322,7 +443,7 @@ export function useCodeChatStore() {
   async function handleStreamEvent(event: StreamEvent, assistantMessageId: string) {
     await applyStreamEvent(event, {
       appendAssistantContent: (content) =>
-        appendAssistantContent(assistantMessageId, content),
+        queueAssistantContent(assistantMessageId, content),
       refreshConversations: loadConversations,
       setConversationId
     });
@@ -330,6 +451,14 @@ export function useCodeChatStore() {
 
   function handleCancel() {
     abortControllerRef.current?.abort();
+  }
+
+  function handleMessagesScroll() {
+    const container = messagesContainerRef.current;
+
+    if (container) {
+      shouldStickToBottomRef.current = isNearScrollBottom(container);
+    }
   }
 
   function clampWidth(width: number, minWidth: number, maxWidth: number) {
@@ -424,10 +553,13 @@ export function useCodeChatStore() {
     const assistantMessage: Message = {
       id: assistantMessageId,
       role: "assistant",
-      content: ""
+      content: "",
+      status: "generating"
     };
     const historyMessages = [...messages, userMessage];
     const abortController = new AbortController();
+
+    startStreamPresentation(assistantMessageId);
 
     shouldStickToBottomRef.current = true;
     setIsHistoryOpen(true);
@@ -491,16 +623,26 @@ export function useCodeChatStore() {
           await handleStreamEvent(data, assistantMessageId);
 
           if (data.type === "done") {
+            await waitForStreamDrain(assistantMessageId);
+            setAssistantStatus(assistantMessageId, "complete");
             await loadConversations();
             return;
           }
         }
       }
+
+      await waitForStreamDrain(assistantMessageId);
+      setAssistantStatus(assistantMessageId, "complete");
     } catch (caughtError) {
       if (caughtError instanceof DOMException && caughtError.name === "AbortError") {
+        flushStreamImmediately(assistantMessageId);
+        setAssistantStatus(assistantMessageId, "stopped");
         await loadConversations();
         return;
       }
+
+      flushStreamImmediately(assistantMessageId);
+      setAssistantStatus(assistantMessageId, "failed");
 
       const message =
         caughtError instanceof Error
@@ -509,8 +651,14 @@ export function useCodeChatStore() {
 
       setError(formatErrorMessage(message));
     } finally {
-      abortControllerRef.current = null;
-      setIsLoading(false);
+      if (streamAssistantIdRef.current === assistantMessageId) {
+        streamAssistantIdRef.current = null;
+      }
+
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
+        setIsLoading(false);
+      }
     }
   }
 
@@ -612,6 +760,7 @@ export function useCodeChatStore() {
     handleComposerKeyDown,
     handleDeleteConversation,
     handleLanguageChange,
+    handleMessagesScroll,
     handleNewChat,
     handleResizeStart,
     handleSelectConversation,

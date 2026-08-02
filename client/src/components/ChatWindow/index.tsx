@@ -12,6 +12,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
   type RefObject,
+  memo,
   useMemo,
   useState
 } from "react";
@@ -73,6 +74,7 @@ type ChatWindowProps = {
   onCancel: () => void;
   onComposerKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onInputChange: (value: string) => void;
+  onMessagesScroll: () => void;
   onSetChatOpen: (isOpen: boolean) => void;
   onSetSelectedModel: (model: string) => void;
   onSetSelectedPersona: (persona: PersonaOption["id"]) => void;
@@ -112,7 +114,7 @@ function CopyableCodeBlock({
   );
 }
 
-function MessageContent({ message }: { message: Message }) {
+const MessageContent = memo(function MessageContent({ message }: { message: Message }) {
   if (message.role === "user" && !message.content.includes("```")) {
     return <p>{message.content}</p>;
   }
@@ -136,7 +138,7 @@ function MessageContent({ message }: { message: Message }) {
       </ReactMarkdown>
     </div>
   );
-}
+});
 
 export function ChatWindow({
   activeModel,
@@ -152,6 +154,7 @@ export function ChatWindow({
   onCancel,
   onComposerKeyDown,
   onInputChange,
+  onMessagesScroll,
   onSetChatOpen,
   onSetSelectedModel,
   onSetSelectedPersona,
@@ -321,7 +324,12 @@ export function ChatWindow({
         </div>
       </header>
 
-      <div className="messages" aria-live="polite" ref={messagesContainerRef}>
+      <div
+        className="messages"
+        aria-live="polite"
+        onScroll={onMessagesScroll}
+        ref={messagesContainerRef}
+      >
         {messages.length === 0 ? (
           <div className="chat-empty-state">
             <strong>Start with a coding question.</strong>
@@ -332,7 +340,7 @@ export function ChatWindow({
         {messages.map((message) => (
           <article
             className={`message ${message.role}${
-              isLoading && message.role === "assistant" && !message.content
+              message.role === "assistant" && message.status === "generating"
                 ? " loading-message"
                 : ""
             }`}
@@ -340,13 +348,27 @@ export function ChatWindow({
           >
             <span>{message.role === "user" ? "You" : "CodeChat"}</span>
             {message.content ? (
-              <MessageContent message={message} />
-            ) : isLoading && message.role === "assistant" ? (
-              <p>
-                <span className="loading-dot" />
-                <span className="loading-dot" />
-                <span className="loading-dot" />
+              <>
+                <MessageContent message={message} />
+                {message.status === "stopped" ? (
+                  <p className="message-status">Stopped</p>
+                ) : message.status === "failed" ? (
+                  <p className="message-status error-status">Generation failed</p>
+                ) : null}
+              </>
+            ) : message.status === "generating" ? (
+              <p className="generating-indicator">
+                <span aria-hidden="true">
+                  <span className="loading-dot" />
+                  <span className="loading-dot" />
+                  <span className="loading-dot" />
+                </span>
+                <span>Generating…</span>
               </p>
+            ) : message.status === "stopped" ? (
+              <p className="message-status">Generation stopped.</p>
+            ) : message.status === "failed" ? (
+              <p className="message-status error-status">Generation failed.</p>
             ) : (
               <p>No response.</p>
             )}

@@ -109,6 +109,7 @@ export function App() {
             onCancel={store.handleCancel}
             onComposerKeyDown={store.handleComposerKeyDown}
             onInputChange={store.setInput}
+            onMessagesScroll={store.handleMessagesScroll}
             onSetChatOpen={store.setIsChatOpen}
             onSetSelectedModel={store.setSelectedModel}
             onSetSelectedPersona={store.setSelectedPersona}

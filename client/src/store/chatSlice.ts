@@ -4,6 +4,7 @@ export type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  status?: "complete" | "failed" | "generating" | "stopped" | "streaming";
 };
 
 export type ChatHistoryMessage = {
