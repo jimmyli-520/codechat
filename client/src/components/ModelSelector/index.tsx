@@ -47,7 +47,7 @@ export function ModelSelector({
           ) : null}
           {models.map((model) => (
             <option key={model.id} value={model.id}>
-              {model.label} — {model.description}
+              {model.label}
             </option>
           ))}
         </select>
