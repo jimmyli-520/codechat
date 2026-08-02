@@ -5,17 +5,17 @@ import {
   getComposerKeyAction
 } from "./composerKeyboard.js";
 
-test("Ctrl+Enter sends a message", () => {
-  const action = getComposerKeyAction({ ctrlKey: true, key: "Enter", shiftKey: false });
+test("Enter sends a message", () => {
+  const action = getComposerKeyAction({ ctrlKey: false, key: "Enter", shiftKey: false });
 
   assert.equal(action, "send");
   assert.equal(canSubmitComposer({ action, input: "Explain this code", isLoading: false }), true);
 });
 
-test("Enter inserts a new line", () => {
+test("Ctrl+Enter also sends a message", () => {
   assert.equal(
-    getComposerKeyAction({ ctrlKey: false, key: "Enter", shiftKey: false }),
-    "newline"
+    getComposerKeyAction({ ctrlKey: true, key: "Enter", shiftKey: false }),
+    "send"
   );
 });
 

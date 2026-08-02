@@ -6,7 +6,7 @@ type ComposerKey = {
 
 export type ComposerKeyAction = "ignore" | "newline" | "send";
 
-export function getComposerKeyAction({ ctrlKey, key, shiftKey }: ComposerKey): ComposerKeyAction {
+export function getComposerKeyAction({ key, shiftKey }: ComposerKey): ComposerKeyAction {
   if (key !== "Enter") {
     return "ignore";
   }
@@ -15,7 +15,7 @@ export function getComposerKeyAction({ ctrlKey, key, shiftKey }: ComposerKey): C
     return "newline";
   }
 
-  return ctrlKey ? "send" : "newline";
+  return "send";
 }
 
 export function canSubmitComposer({
