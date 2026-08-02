@@ -26,6 +26,7 @@ import {
 import { prepareChatMessage } from "./editorContext";
 import { modelOptions } from "./modelSlice";
 import { type PersonaOption, personaOptions } from "./modeSlice";
+import { applyStreamEvent } from "./streamEvents";
 
 export type LanguageOption = {
   id: "javascript" | "typescript" | "python" | "html" | "css";
@@ -318,20 +319,13 @@ export function useCodeChatStore() {
     );
   }
 
-  function handleStreamEvent(event: StreamEvent, assistantMessageId: string) {
-    if (event.type === "conversation") {
-      setConversationId(event.conversationId);
-      return;
-    }
-
-    if (event.type === "chunk") {
-      appendAssistantContent(assistantMessageId, event.content);
-      return;
-    }
-
-    if (event.type === "error") {
-      throw new Error(event.error);
-    }
+  async function handleStreamEvent(event: StreamEvent, assistantMessageId: string) {
+    await applyStreamEvent(event, {
+      appendAssistantContent: (content) =>
+        appendAssistantContent(assistantMessageId, content),
+      refreshConversations: loadConversations,
+      setConversationId
+    });
   }
 
   function handleCancel() {
@@ -494,7 +488,7 @@ export function useCodeChatStore() {
 
           const data = JSON.parse(dataLine.slice(6)) as StreamEvent;
 
-          handleStreamEvent(data, assistantMessageId);
+          await handleStreamEvent(data, assistantMessageId);
 
           if (data.type === "done") {
             await loadConversations();
