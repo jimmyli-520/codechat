@@ -226,12 +226,6 @@ export function ChatWindow({
       return;
     }
 
-    if (event.key === "Enter") {
-      event.preventDefault();
-      acceptAutocompleteSuggestion();
-      return;
-    }
-
     onComposerKeyDown(event);
   }
 

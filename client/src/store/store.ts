@@ -23,6 +23,7 @@ import {
   isVisibleMessage,
   toChatHistory
 } from "./chatSlice";
+import { canSubmitComposer, getComposerKeyAction } from "./composerKeyboard";
 import { prepareChatMessage } from "./editorContext";
 import { modelOptions } from "./modelSlice";
 import { type PersonaOption, personaOptions } from "./modeSlice";
@@ -538,28 +539,27 @@ export function useCodeChatStore() {
   }
 
   function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.ctrlKey && event.key === "Enter") {
-      event.preventDefault();
-      const trimmedInput = input.trim();
+    const action = getComposerKeyAction(event);
 
-      if (!trimmedInput || isLoading) {
-        return;
-      }
-
-      const languageLabel =
-        languageOptions.find((language) => language.id === selectedLanguage)?.label ??
-        selectedLanguage;
-      const message = prepareChatMessage({
-        code,
-        language: selectedLanguage,
-        languageLabel,
-        persona: selectedPersona,
-        question: trimmedInput
-      });
-
-      setInput("");
-      void sendMessage(message);
+    if (!canSubmitComposer({ action, input, isLoading })) {
+      return;
     }
+
+    event.preventDefault();
+    const trimmedInput = input.trim();
+    const languageLabel =
+      languageOptions.find((language) => language.id === selectedLanguage)?.label ??
+      selectedLanguage;
+    const message = prepareChatMessage({
+      code,
+      language: selectedLanguage,
+      languageLabel,
+      persona: selectedPersona,
+      question: trimmedInput
+    });
+
+    setInput("");
+    void sendMessage(message);
   }
 
   async function handleCodeChat() {
