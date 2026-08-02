@@ -23,6 +23,7 @@ import type { ModelOption } from "../../store/modelSlice";
 import type { PersonaOption } from "../../store/modeSlice";
 import { ModeSwitcher } from "../ModeSwitcher";
 import { ModelSelector } from "../ModelSelector";
+import { getClipboardCode } from "./codeText";
 
 const autocompleteWords = [
   "suggestion",
@@ -83,7 +84,7 @@ function CopyableCodeBlock({
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const code = String(children).replace(/\n$/, "");
+  const code = getClipboardCode(children);
   const language = className?.replace("hljs language-", "").replace("language-", "") ?? "code";
 
   async function handleCopy() {
