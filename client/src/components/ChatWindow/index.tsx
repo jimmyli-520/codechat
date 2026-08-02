@@ -74,6 +74,7 @@ type ChatWindowProps = {
   selectedPersona: PersonaOption["id"];
   settingsMenuRef: RefObject<HTMLDivElement | null>;
   onCancel: () => void;
+  onDismissError: () => void;
   onComposerKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onInputChange: (value: string) => void;
   onMessagesScroll: () => void;
@@ -113,6 +114,7 @@ export function ChatWindow({
   modelOptions,
   modelsError,
   onCancel,
+  onDismissError,
   onComposerKeyDown,
   onInputChange,
   onMessagesScroll,
@@ -351,7 +353,25 @@ export function ChatWindow({
         <div ref={latestMessageRef} />
       </div>
 
-      {error ? <p className="error-message">{error}</p> : null}
+      {error ? (
+        <div className="error-message" role="alert">
+          <span>{error}</span>
+          <button aria-label="Dismiss error" onClick={onDismissError} type="button">
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
+      {!isModelsLoading && !hasAvailableModel ? (
+        <div className="composer-recovery" role="status">
+          <span>A local Ollama model is required before you can send a message.</span>
+          <button onClick={() => onSetSettingsOpen(true)} type="button">
+            Open model settings
+          </button>
+        </div>
+      ) : isModelsLoading ? (
+        <p className="composer-recovery" role="status">Checking local Ollama models…</p>
+      ) : null}
 
       <form className="composer" onSubmit={onSubmit}>
         <div className="composer-input-shell">

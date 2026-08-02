@@ -43,11 +43,14 @@ export function App() {
             conversationId={store.conversationId}
             conversations={store.conversations}
             formatTimestamp={store.formatTimestamp}
+            historyError={store.conversationsError}
             isConversationLoading={store.isConversationLoading}
+            isHistoryLoading={store.isHistoryLoading}
             isHistoryOpen={store.isHistoryOpen}
             isLoading={store.isLoading}
             onDeleteConversation={store.handleDeleteConversation}
             onNewChat={store.handleNewChat}
+            onRetryHistory={() => void store.loadConversations(true)}
             onSelectConversation={(id) => void store.handleSelectConversation(id)}
             onSetHistoryOpen={store.setIsHistoryOpen}
           />
@@ -111,6 +114,7 @@ export function App() {
             modelOptions={store.modelOptions}
             modelsError={store.modelsError}
             onCancel={store.handleCancel}
+            onDismissError={() => store.setError(null)}
             onComposerKeyDown={store.handleComposerKeyDown}
             onInputChange={store.setInput}
             onMessagesScroll={store.handleMessagesScroll}

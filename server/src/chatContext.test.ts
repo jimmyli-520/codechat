@@ -1,6 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildChatMessages } from "./routes/chat.js";
+import { buildChatMessages, createConversationTitle } from "./routes/chat.js";
+
+test("keeps editor transport metadata out of conversation titles", () => {
+  const title = createConversationTitle(`What does this code do?
+
+[Editor context included · JavaScript]
+\`\`\`javascript
+const answer = 42;
+\`\`\``);
+
+  assert.equal(title, "What does this code do?");
+  assert.equal(
+    createConversationTitle("Explain how dependency injection improves testability in an application."),
+    "Explain how dependency injection improves testab..."
+  );
+});
 
 test("identifies a genuinely new conversation without claiming context was lost", () => {
   const messages = buildChatMessages({

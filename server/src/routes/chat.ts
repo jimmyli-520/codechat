@@ -167,8 +167,12 @@ function writeSse(response: Response, event: unknown) {
   response.write(`data: ${JSON.stringify(event)}\n\n`);
 }
 
-function createTitle(message: string) {
-  return message.length > 48 ? `${message.slice(0, 48)}...` : message;
+export function createConversationTitle(message: string) {
+  const editorContextIndex = message.indexOf(`\n\n${editorContextMarker}`);
+  const visibleMessage = (editorContextIndex >= 0 ? message.slice(0, editorContextIndex) : message)
+    .trim();
+
+  return visibleMessage.length > 48 ? `${visibleMessage.slice(0, 48)}...` : visibleMessage;
 }
 
 async function getOrCreateConversation({
@@ -191,7 +195,7 @@ async function getOrCreateConversation({
   }
 
   const conversation = await createConversation({
-    title: createTitle(message),
+    title: createConversationTitle(message),
     model,
     persona
   });

@@ -1,19 +1,23 @@
-import { ChevronRight, PanelLeftClose, PanelLeftOpen, Trash2 } from "lucide-react";
+import { ChevronRight, PanelLeftClose, PanelLeftOpen, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useReducer, useRef } from "react";
 import type { ConversationSummary } from "../../store/chatSlice";
 import {
   deleteConfirmationReducer,
   initialDeleteConfirmationState
 } from "./deleteConfirmation";
+import { getHistoryViewState } from "./historyState";
 
 type SidebarProps = {
   conversationId: string | null;
   conversations: ConversationSummary[];
+  historyError: string | null;
+  isHistoryLoading: boolean;
   isConversationLoading: boolean;
   isHistoryOpen: boolean;
   isLoading: boolean;
   onDeleteConversation: (id: string) => Promise<boolean>;
   onNewChat: () => void;
+  onRetryHistory: () => void;
   onSelectConversation: (id: string) => void;
   onSetHistoryOpen: (isOpen: boolean) => void;
   formatTimestamp: (timestamp: string) => string;
@@ -23,14 +27,22 @@ export function Sidebar({
   conversationId,
   conversations,
   formatTimestamp,
+  historyError,
   isConversationLoading,
+  isHistoryLoading,
   isHistoryOpen,
   isLoading,
   onDeleteConversation,
   onNewChat,
+  onRetryHistory,
   onSelectConversation,
   onSetHistoryOpen
 }: SidebarProps) {
+  const historyViewState = getHistoryViewState({
+    conversationCount: conversations.length,
+    error: historyError,
+    isLoading: isHistoryLoading
+  });
   const [deleteConfirmation, dispatchDeleteConfirmation] = useReducer(
     deleteConfirmationReducer,
     initialDeleteConfirmationState
@@ -114,12 +126,40 @@ export function Sidebar({
       </div>
 
       <div className="conversation-list">
-        {conversations.length === 0 ? (
+        {isConversationLoading ? (
+          <div className="history-progress" role="status">
+            Opening conversation…
+          </div>
+        ) : null}
+
+        {historyError && historyViewState === "ready" ? (
+          <div className="history-inline-error" role="alert">
+            <span>History could not refresh.</span>
+            <button onClick={onRetryHistory} type="button">Retry</button>
+          </div>
+        ) : null}
+
+        {historyViewState === "loading" ? (
+          <div className="empty-state" role="status">
+            <RefreshCw aria-hidden="true" className="is-spinning" size={18} />
+            <strong>Loading conversations…</strong>
+            <span>Checking your saved local history.</span>
+          </div>
+        ) : historyViewState === "error" ? (
+          <div className="empty-state history-error-state" role="alert">
+            <strong>History could not load.</strong>
+            <span>{historyError}</span>
+            <button className="ghost-button" onClick={onRetryHistory} type="button">
+              <RefreshCw size={14} />
+              Try again
+            </button>
+          </div>
+        ) : historyViewState === "empty" ? (
           <div className="empty-state">
             <strong>No saved conversations yet.</strong>
             <span>Send a message and CodeChat will save the thread here.</span>
           </div>
-        ) : (
+        ) : historyViewState === "ready" ? (
           conversations.map((conversation) => (
             <div
               className={`conversation-item${conversation.id === conversationId ? " active" : ""}`}
@@ -156,7 +196,7 @@ export function Sidebar({
               </button>
             </div>
           ))
-        )}
+        ) : null}
       </div>
 
       {deleteConfirmation.target ? (

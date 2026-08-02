@@ -86,6 +86,8 @@ export const languageOptions: LanguageOption[] = [
 export function useCodeChatStore() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [conversationsError, setConversationsError] = useState<string | null>(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [input, setInput] = useState("");
   const [code, setCode] = useState(starterCodeByLanguage.javascript);
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption["id"]>("javascript");
@@ -177,7 +179,7 @@ export function useCodeChatStore() {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    void loadConversations();
+    void loadConversations(true);
     void refreshModels();
   }, []);
 
@@ -218,7 +220,13 @@ export function useCodeChatStore() {
     };
   }, [isSettingsOpen]);
 
-  async function loadConversations() {
+  async function loadConversations(showLoading = false) {
+    if (showLoading) {
+      setIsHistoryLoading(true);
+    }
+
+    setConversationsError(null);
+
     try {
       setConversations(await fetchConversations());
     } catch (caughtError) {
@@ -227,7 +235,11 @@ export function useCodeChatStore() {
           ? caughtError.message
           : "Could not load conversations.";
 
-      setError(formatErrorMessage(message));
+      setConversationsError(formatErrorMessage(message));
+    } finally {
+      if (showLoading) {
+        setIsHistoryLoading(false);
+      }
     }
   }
 
@@ -822,6 +834,7 @@ export function useCodeChatStore() {
     columnStyle,
     conversationId,
     conversations,
+    conversationsError,
     editorWidth,
     error,
     formatTimestamp,
@@ -842,6 +855,7 @@ export function useCodeChatStore() {
     isConversationLoading,
     isEditorOpen,
     isHistoryOpen,
+    isHistoryLoading,
     isLoading,
     isModelsLoading,
     isSettingsOpen,
@@ -851,10 +865,12 @@ export function useCodeChatStore() {
     modelOptions,
     modelsError,
     refreshModels,
+    loadConversations,
     selectedLanguage,
     selectedModel,
     selectedPersona,
     setCode,
+    setError,
     setInput,
     setIsChatOpen,
     setIsEditorOpen,
