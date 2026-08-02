@@ -537,7 +537,7 @@ export function useCodeChatStore() {
     await sendMessage(message);
   }
 
-  function handleComposerKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.ctrlKey && event.key === "Enter") {
       event.preventDefault();
       const trimmedInput = input.trim();

@@ -7,6 +7,7 @@ import {
   Square
 } from "lucide-react";
 import {
+  type ClipboardEvent,
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
@@ -21,8 +22,10 @@ import "highlight.js/styles/github-dark.css";
 import type { Message } from "../../store/chatSlice";
 import type { ModelOption } from "../../store/modelSlice";
 import type { PersonaOption } from "../../store/modeSlice";
+import type { LanguageOption } from "../../store/store";
 import { ModeSwitcher } from "../ModeSwitcher";
 import { ModelSelector } from "../ModelSelector";
+import { formatPastedCode } from "./codePaste";
 import { getClipboardCode } from "./codeText";
 
 const autocompleteWords = [
@@ -64,10 +67,11 @@ type ChatWindowProps = {
   messages: Message[];
   messagesContainerRef: RefObject<HTMLDivElement | null>;
   selectedModel: string;
+  selectedLanguage: LanguageOption["id"];
   selectedPersona: PersonaOption["id"];
   settingsMenuRef: RefObject<HTMLDivElement | null>;
   onCancel: () => void;
-  onComposerKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  onComposerKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onInputChange: (value: string) => void;
   onSetChatOpen: (isOpen: boolean) => void;
   onSetSelectedModel: (model: string) => void;
@@ -109,7 +113,7 @@ function CopyableCodeBlock({
 }
 
 function MessageContent({ message }: { message: Message }) {
-  if (message.role === "user") {
+  if (message.role === "user" && !message.content.includes("```")) {
     return <p>{message.content}</p>;
   }
 
@@ -153,6 +157,7 @@ export function ChatWindow({
   onSetSelectedPersona,
   onSetSettingsOpen,
   onSubmit,
+  selectedLanguage,
   selectedModel,
   selectedPersona,
   settingsMenuRef
@@ -161,6 +166,10 @@ export function ChatWindow({
     null
   );
   const autocompleteSuggestion = useMemo(() => {
+    if (input.includes("\n")) {
+      return null;
+    }
+
     const activeWordMatch = input.match(/[A-Za-z]+$/);
 
     if (!activeWordMatch) {
@@ -199,7 +208,7 @@ export function ChatWindow({
     setDismissedAutocompletePrefix(null);
   }
 
-  function handleAutocompleteKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  function handleAutocompleteKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (!autocompleteSuggestion) {
       onComposerKeyDown(event);
       return;
@@ -224,6 +233,27 @@ export function ChatWindow({
     }
 
     onComposerKeyDown(event);
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const pastedText = event.clipboardData.getData("text/plain");
+    const formattedText = formatPastedCode(pastedText, selectedLanguage);
+
+    if (formattedText === pastedText.replace(/\r\n/g, "\n")) {
+      return;
+    }
+
+    event.preventDefault();
+    const textarea = event.currentTarget;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    const nextInput = `${input.slice(0, selectionStart)}${formattedText}${input.slice(selectionEnd)}`;
+    const nextCursorPosition = selectionStart + formattedText.length;
+
+    onInputChange(nextInput);
+    window.requestAnimationFrame(() => {
+      textarea.setSelectionRange(nextCursorPosition, nextCursorPosition);
+    });
   }
 
   if (!isChatOpen) {
@@ -344,7 +374,7 @@ export function ChatWindow({
               </span>
             </div>
           ) : null}
-          <input
+          <textarea
             aria-label="Message"
             className={autocompleteSuggestion ? "has-autocomplete" : undefined}
             disabled={isLoading}
@@ -353,7 +383,9 @@ export function ChatWindow({
               onInputChange(event.target.value);
             }}
             onKeyDown={handleAutocompleteKeyDown}
+            onPaste={handlePaste}
             placeholder="Ask a coding question... Ctrl+Enter to send"
+            rows={input.includes("\n") ? 5 : 1}
             value={input}
           />
         </div>

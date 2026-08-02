@@ -115,6 +115,7 @@ export function App() {
             onSetSettingsOpen={store.setIsSettingsOpen}
             onSubmit={store.handleSubmit}
             selectedModel={store.selectedModel}
+            selectedLanguage={store.selectedLanguage}
             selectedPersona={store.selectedPersona}
             settingsMenuRef={store.settingsMenuRef}
           />

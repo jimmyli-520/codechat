@@ -846,7 +846,7 @@ button:disabled {
   flex: 1;
 }
 
-.composer input {
+.composer textarea {
   position: relative;
   z-index: 1;
   width: 100%;
@@ -857,9 +857,12 @@ button:disabled {
   border-radius: 8px;
   color: var(--text);
   background: var(--panel);
+  line-height: 1.45;
+  max-height: 150px;
+  resize: vertical;
 }
 
-.composer input.has-autocomplete {
+.composer textarea.has-autocomplete {
   color: transparent;
   caret-color: var(--text);
   background: transparent;
