@@ -738,22 +738,28 @@ button:disabled {
 .confirmation-dialog {
   width: min(440px, calc(100vw - 32px));
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 18px;
   color: var(--text);
-  background: var(--panel);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
+  background: rgba(250, 250, 252, 0.72);
+  box-shadow:
+    0 2px 3px rgba(15, 23, 32, 0.06),
+    0 22px 70px rgba(15, 23, 32, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
 }
 
 .confirmation-dialog::backdrop {
-  background: rgba(10, 15, 20, 0.48);
-  backdrop-filter: blur(2px);
+  background: rgba(20, 24, 29, 0.2);
+  -webkit-backdrop-filter: blur(7px) saturate(115%);
+  backdrop-filter: blur(7px) saturate(115%);
 }
 
 .confirmation-dialog-content {
   display: grid;
-  gap: 18px;
-  padding: 22px;
+  gap: 20px;
+  padding: 26px;
 }
 
 .confirmation-dialog h2,
@@ -767,19 +773,82 @@ button:disabled {
   gap: 10px;
 }
 
+.confirmation-cancel,
 .danger-button {
-  border: 1px solid var(--danger);
-  border-radius: 7px;
-  padding: 8px 12px;
-  color: white;
-  background: var(--danger);
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 9px 15px;
   cursor: pointer;
-  font-weight: 760;
+  font-weight: 720;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
+.confirmation-cancel {
+  border: 1px solid rgba(60, 60, 67, 0.14);
+  color: #27272a;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.confirmation-cancel:hover {
+  border-color: rgba(60, 60, 67, 0.2);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.danger-button {
+  border: 1px solid rgba(181, 31, 25, 0.5);
+  color: white;
+  background: #e33b32;
+  box-shadow:
+    0 5px 14px rgba(201, 44, 36, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.danger-button:hover {
+  background: #d9342c;
+  transform: translateY(-1px);
+}
+
+.confirmation-cancel:focus-visible,
+.danger-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  outline-offset: 2px;
+}
+
+.confirmation-cancel:disabled,
 .danger-button:disabled {
   cursor: wait;
   opacity: 0.65;
+  transform: none;
+}
+
+[data-theme="dark"] .confirmation-dialog {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(27, 31, 36, 0.7);
+  box-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.22),
+    0 24px 80px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .confirmation-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.38);
+}
+
+[data-theme="dark"] .confirmation-cancel {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f4f4f5;
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+[data-theme="dark"] .confirmation-cancel:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .assistant {

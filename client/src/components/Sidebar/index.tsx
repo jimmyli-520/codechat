@@ -191,7 +191,7 @@ export function Sidebar({
             <div className="confirmation-actions">
               <button
                 autoFocus
-                className="ghost-button"
+                className="confirmation-cancel"
                 disabled={deleteConfirmation.isDeleting}
                 onClick={() => dispatchDeleteConfirmation({ type: "cancel" })}
                 type="button"
