@@ -7,9 +7,9 @@ import {
 
 const defaultModel = "llama3.2:3b";
 
-type Persona = "code-reviewer" | "code-teacher" | "code-generator";
+export type Persona = "code-reviewer" | "code-teacher" | "code-generator";
 
-type ChatMessage = {
+export type ChatMessage = {
   role: "system" | "user" | "assistant";
   content: string;
 };
@@ -53,6 +53,14 @@ const systemPrompts: Record<Persona, string> = {
     "You are CodeChat in Code Generator mode. Help produce clean, practical code. Explain key choices briefly, include complete snippets when useful, and avoid unnecessary complexity."
 };
 
+const editorContextMarker = "[Editor context included";
+
+export type ConversationContext = {
+  currentEditorCodeIncluded: boolean;
+  hasPriorMessages: boolean;
+  priorEditorCodeIncluded: boolean;
+};
+
 function resolvePersona(persona?: string): Persona {
   if (
     persona === "code-reviewer" ||
@@ -73,7 +81,43 @@ function isHistoryMessage(message: ChatMessage) {
   );
 }
 
-function buildChatMessages({
+export function getConversationContext({
+  history,
+  message
+}: {
+  history: ChatMessage[];
+  message: string;
+}): ConversationContext {
+  const hasLatestUserMessage =
+    history.at(-1)?.role === "user" && history.at(-1)?.content === message;
+  const priorMessages = hasLatestUserMessage ? history.slice(0, -1) : history;
+
+  return {
+    currentEditorCodeIncluded: message.includes(editorContextMarker),
+    hasPriorMessages: priorMessages.length > 0,
+    priorEditorCodeIncluded: priorMessages.some((historyMessage) =>
+      historyMessage.content.includes(editorContextMarker)
+    )
+  };
+}
+
+export function getContextInstruction(context: ConversationContext) {
+  if (context.currentEditorCodeIncluded) {
+    return context.hasPriorMessages
+      ? "This is a follow-up conversation, and the current user message explicitly includes current editor code. Use both the earlier conversation and the fenced editor code. Never say that no code was provided."
+      : "This is the first turn of a new conversation, and the current user message explicitly includes current editor code. Treat the fenced block as the code to discuss. Never say that no code was provided.";
+  }
+
+  if (context.hasPriorMessages) {
+    return context.priorEditorCodeIncluded
+      ? "This is a follow-up conversation with prior messages. Editor code was included earlier in the conversation, so use that code when the user's follow-up refers to it. Do not claim the conversation or code context is missing."
+      : "This is a follow-up conversation with prior messages. Use the supplied history when answering references to earlier messages. Do not describe this as a new conversation or claim that the prior conversation is missing.";
+  }
+
+  return "This is the first turn of a genuinely new conversation and there are no earlier messages. Answer the current request directly. Do not volunteer that context is missing unless the request depends on unspecified earlier messages or code; in that case, briefly ask the user to provide what is needed.";
+}
+
+export function buildChatMessages({
   history,
   message,
   persona
@@ -92,11 +136,17 @@ function buildChatMessages({
   const hasLatestUserMessage =
     sanitizedHistory.at(-1)?.role === "user" &&
     sanitizedHistory.at(-1)?.content === message;
+  const contextInstruction = getContextInstruction(
+    getConversationContext({
+      history: sanitizedHistory,
+      message
+    })
+  );
 
   return [
     {
       role: "system",
-      content: systemPrompts[persona]
+      content: `${systemPrompts[persona]}\n\nConversation context: ${contextInstruction}`
     },
     ...(hasLatestUserMessage
       ? sanitizedHistory
