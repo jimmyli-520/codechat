@@ -268,7 +268,7 @@ export function useCodeChatStore() {
 
   async function handleDeleteConversation(id: string) {
     if (isLoading) {
-      return;
+      return false;
     }
 
     setError(null);
@@ -283,6 +283,8 @@ export function useCodeChatStore() {
       if (conversationId === id) {
         handleNewChat();
       }
+
+      return true;
     } catch (caughtError) {
       const message =
         caughtError instanceof Error
@@ -290,6 +292,7 @@ export function useCodeChatStore() {
           : "Could not delete conversation.";
 
       setError(formatErrorMessage(message));
+      return false;
     }
   }
 

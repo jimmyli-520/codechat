@@ -46,7 +46,7 @@ export function App() {
             isConversationLoading={store.isConversationLoading}
             isHistoryOpen={store.isHistoryOpen}
             isLoading={store.isLoading}
-            onDeleteConversation={(id) => void store.handleDeleteConversation(id)}
+            onDeleteConversation={store.handleDeleteConversation}
             onNewChat={store.handleNewChat}
             onSelectConversation={(id) => void store.handleSelectConversation(id)}
             onSetHistoryOpen={store.setIsHistoryOpen}
