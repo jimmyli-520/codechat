@@ -74,7 +74,7 @@ export function App() {
             isLoading={store.isLoading}
             onCodeChange={store.setCode}
             onCodeChat={() => void store.handleCodeChat()}
-            onLanguageChange={store.setSelectedLanguage}
+            onLanguageChange={store.handleLanguageChange}
             onSetEditorOpen={store.setIsEditorOpen}
             selectedLanguage={store.selectedLanguage}
             theme={store.theme}

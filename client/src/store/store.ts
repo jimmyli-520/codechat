@@ -27,10 +27,15 @@ import { canSubmitComposer, getComposerKeyAction } from "./composerKeyboard";
 import { prepareChatMessage } from "./editorContext";
 import { modelOptions } from "./modelSlice";
 import { type PersonaOption, personaOptions } from "./modeSlice";
+import {
+  getCodeForLanguageChange,
+  starterCodeByLanguage,
+  type SupportedLanguage
+} from "./starterCode";
 import { applyStreamEvent } from "./streamEvents";
 
 export type LanguageOption = {
-  id: "javascript" | "typescript" | "python" | "html" | "css";
+  id: SupportedLanguage;
   label: string;
 };
 
@@ -68,17 +73,11 @@ export const languageOptions: LanguageOption[] = [
   }
 ];
 
-const starterCode = `function greet(name) {
-  return \`Hello, \${name}!\`;
-}
-
-console.log(greet("CodeChat"));`;
-
 export function useCodeChatStore() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [input, setInput] = useState("");
-  const [code, setCode] = useState(starterCode);
+  const [code, setCode] = useState(starterCodeByLanguage.javascript);
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption["id"]>("javascript");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState("llama3.2:3b");
@@ -562,6 +561,17 @@ export function useCodeChatStore() {
     void sendMessage(message);
   }
 
+  function handleLanguageChange(nextLanguage: LanguageOption["id"]) {
+    setCode((currentCode) =>
+      getCodeForLanguageChange({
+        code: currentCode,
+        currentLanguage: selectedLanguage,
+        nextLanguage
+      })
+    );
+    setSelectedLanguage(nextLanguage);
+  }
+
   async function handleCodeChat() {
     const trimmedQuestion = input.trim();
     const trimmedCode = code.trim();
@@ -601,6 +611,7 @@ export function useCodeChatStore() {
     handleCodeChat,
     handleComposerKeyDown,
     handleDeleteConversation,
+    handleLanguageChange,
     handleNewChat,
     handleResizeStart,
     handleSelectConversation,
@@ -625,7 +636,6 @@ export function useCodeChatStore() {
     setIsEditorOpen,
     setIsHistoryOpen,
     setIsSettingsOpen,
-    setSelectedLanguage,
     setSelectedModel,
     setSelectedPersona,
     setTheme,
