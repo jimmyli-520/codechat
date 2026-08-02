@@ -11,6 +11,22 @@ import {
   resolveInstalledModel
 } from "../ollama/models.js";
 
+export type ConversationsRouterDependencies = {
+  createConversation: typeof createConversation;
+  deleteConversation: typeof deleteConversation;
+  fetchInstalledModels: typeof fetchInstalledModels;
+  getConversation: typeof getConversation;
+  listConversations: typeof listConversations;
+};
+
+const defaultConversationsDependencies: ConversationsRouterDependencies = {
+  createConversation,
+  deleteConversation,
+  fetchInstalledModels,
+  getConversation,
+  listConversations
+};
+
 type Persona = "code-reviewer" | "code-teacher" | "code-generator";
 
 type ApiErrorResponse = {
@@ -29,7 +45,10 @@ function resolvePersona(persona?: string): Persona {
   return "code-teacher";
 }
 
-export function createConversationsRouter(ollamaBaseUrl: string) {
+export function createConversationsRouter(
+  ollamaBaseUrl: string,
+  dependencies: ConversationsRouterDependencies = defaultConversationsDependencies
+) {
   const router = Router();
 
   router.post(
@@ -48,7 +67,7 @@ export function createConversationsRouter(ollamaBaseUrl: string) {
 
       try {
         model = resolveInstalledModel({
-          installedModels: await fetchInstalledModels(ollamaBaseUrl),
+          installedModels: await dependencies.fetchInstalledModels(ollamaBaseUrl),
           requestedModel: request.body.model
         });
       } catch (error) {
@@ -68,7 +87,7 @@ export function createConversationsRouter(ollamaBaseUrl: string) {
       }
 
       try {
-        const conversation = await createConversation({
+        const conversation = await dependencies.createConversation({
           title,
           model,
           persona
@@ -91,7 +110,7 @@ export function createConversationsRouter(ollamaBaseUrl: string) {
       response: Response<Awaited<ReturnType<typeof listConversations>> | ApiErrorResponse>
     ) => {
       try {
-        const conversations = await listConversations();
+        const conversations = await dependencies.listConversations();
         response.json(conversations);
       } catch (error) {
         console.error("Error listing conversations:", error);
@@ -109,7 +128,7 @@ export function createConversationsRouter(ollamaBaseUrl: string) {
       response: Response<Awaited<ReturnType<typeof getConversation>> | ApiErrorResponse>
     ) => {
       try {
-        const conversation = await getConversation(request.params.id);
+        const conversation = await dependencies.getConversation(request.params.id);
 
         if (!conversation) {
           response.status(404).json({
@@ -135,7 +154,7 @@ export function createConversationsRouter(ollamaBaseUrl: string) {
       response: Response<{ deleted: true } | ApiErrorResponse>
     ) => {
       try {
-        const deleted = await deleteConversation(request.params.id);
+        const deleted = await dependencies.deleteConversation(request.params.id);
 
         if (!deleted) {
           response.status(404).json({

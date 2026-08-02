@@ -4,13 +4,20 @@ import {
   ModelInventoryError
 } from "../ollama/models.js";
 
-export function createModelsRouter(ollamaBaseUrl: string) {
+export type ModelsRouterDependencies = {
+  fetchInstalledModels: typeof fetchInstalledModels;
+};
+
+export function createModelsRouter(
+  ollamaBaseUrl: string,
+  dependencies: ModelsRouterDependencies = { fetchInstalledModels }
+) {
   const router = Router();
 
   router.get("/models", async (_request, response) => {
     try {
       response.json({
-        models: await fetchInstalledModels(ollamaBaseUrl)
+        models: await dependencies.fetchInstalledModels(ollamaBaseUrl)
       });
     } catch (error) {
       const message =

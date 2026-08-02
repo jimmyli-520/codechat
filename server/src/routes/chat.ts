@@ -10,6 +10,22 @@ import {
   resolveInstalledModel
 } from "../ollama/models.js";
 
+export type ChatRouterDependencies = {
+  createConversation: typeof createConversation;
+  fetch: typeof fetch;
+  fetchInstalledModels: typeof fetchInstalledModels;
+  getConversation: typeof getConversation;
+  saveMessage: typeof saveMessage;
+};
+
+const defaultChatDependencies: ChatRouterDependencies = {
+  createConversation,
+  fetch: globalThis.fetch,
+  fetchInstalledModels,
+  getConversation,
+  saveMessage
+};
+
 export type Persona = "code-reviewer" | "code-teacher" | "code-generator";
 
 export type ChatMessage = {
@@ -179,22 +195,24 @@ async function getOrCreateConversation({
   conversationId,
   message,
   model,
-  persona
+  persona,
+  dependencies
 }: {
   conversationId?: string;
   message: string;
   model: string;
   persona: Persona;
+  dependencies: ChatRouterDependencies;
 }) {
   if (conversationId) {
-    const conversation = await getConversation(conversationId);
+    const conversation = await dependencies.getConversation(conversationId);
 
     if (conversation) {
       return conversation.id;
     }
   }
 
-  const conversation = await createConversation({
+  const conversation = await dependencies.createConversation({
     title: createConversationTitle(message),
     model,
     persona
@@ -203,7 +221,10 @@ async function getOrCreateConversation({
   return conversation.id;
 }
 
-export function createChatRouter(ollamaBaseUrl: string) {
+export function createChatRouter(
+  ollamaBaseUrl: string,
+  dependencies: ChatRouterDependencies = defaultChatDependencies
+) {
   const router = Router();
 
   router.post(
@@ -226,7 +247,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
 
       try {
         model = resolveInstalledModel({
-          installedModels: await fetchInstalledModels(ollamaBaseUrl),
+          installedModels: await dependencies.fetchInstalledModels(ollamaBaseUrl),
           requestedModel: request.body.model
         });
       } catch (error) {
@@ -250,10 +271,11 @@ export function createChatRouter(ollamaBaseUrl: string) {
           conversationId: request.body.conversationId,
           message,
           model,
-          persona
+          persona,
+          dependencies
         });
 
-        await saveMessage({
+        await dependencies.saveMessage({
           conversationId,
           role: "user",
           content: message,
@@ -269,7 +291,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
       }
 
       try {
-        const ollamaResponse = await fetch(`${ollamaBaseUrl}/api/chat`, {
+        const ollamaResponse = await dependencies.fetch(`${ollamaBaseUrl}/api/chat`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -293,7 +315,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
         }
 
         const data = (await ollamaResponse.json()) as OllamaChatResponse;
-        await saveMessage({
+        await dependencies.saveMessage({
           conversationId,
           role: "assistant",
           content: data.message.content,
@@ -333,7 +355,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
 
       try {
         model = resolveInstalledModel({
-          installedModels: await fetchInstalledModels(ollamaBaseUrl),
+          installedModels: await dependencies.fetchInstalledModels(ollamaBaseUrl),
           requestedModel: request.body.model
         });
       } catch (error) {
@@ -360,10 +382,11 @@ export function createChatRouter(ollamaBaseUrl: string) {
             conversationId: request.body.conversationId,
             message,
             model,
-            persona
+            persona,
+            dependencies
           });
 
-          await saveMessage({
+          await dependencies.saveMessage({
             conversationId,
             role: "user",
             content: message,
@@ -378,7 +401,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
           return;
         }
 
-        const ollamaResponse = await fetch(`${ollamaBaseUrl}/api/chat`, {
+        const ollamaResponse = await dependencies.fetch(`${ollamaBaseUrl}/api/chat`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -452,7 +475,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
 
             if (chunk.done) {
               if (assistantContent.trim()) {
-                await saveMessage({
+                await dependencies.saveMessage({
                   conversationId,
                   role: "assistant",
                   content: assistantContent,
@@ -471,7 +494,7 @@ export function createChatRouter(ollamaBaseUrl: string) {
         }
 
         if (assistantContent.trim()) {
-          await saveMessage({
+          await dependencies.saveMessage({
             conversationId,
             role: "assistant",
             content: assistantContent,

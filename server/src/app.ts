@@ -4,11 +4,19 @@ import express, {
   type RequestHandler
 } from "express";
 import { createChatRouter } from "./routes/chat.js";
+import type { ChatRouterDependencies } from "./routes/chat.js";
 import { createConversationsRouter } from "./routes/conversations.js";
+import type { ConversationsRouterDependencies } from "./routes/conversations.js";
 import { createModelsRouter } from "./routes/models.js";
+import type { ModelsRouterDependencies } from "./routes/models.js";
 import { createStatsRouter } from "./routes/stats.js";
 
 type CreateAppOptions = {
+  dependencies?: {
+    chat?: ChatRouterDependencies;
+    conversations?: ConversationsRouterDependencies;
+    models?: ModelsRouterDependencies;
+  };
   ollamaBaseUrl: string;
   trustedOrigins: string[];
 };
@@ -36,6 +44,7 @@ function createCorsOptions(trustedOrigins: string[]): CorsOptions {
 }
 
 export function createApp({
+  dependencies,
   ollamaBaseUrl,
   trustedOrigins
 }: CreateAppOptions) {
@@ -46,9 +55,9 @@ export function createApp({
   app.options("*", corsMiddleware as RequestHandler);
   app.use(express.json());
   app.use("/api", createStatsRouter());
-  app.use("/api", createModelsRouter(ollamaBaseUrl));
-  app.use("/api", createConversationsRouter(ollamaBaseUrl));
-  app.use("/api", createChatRouter(ollamaBaseUrl));
+  app.use("/api", createModelsRouter(ollamaBaseUrl, dependencies?.models));
+  app.use("/api", createConversationsRouter(ollamaBaseUrl, dependencies?.conversations));
+  app.use("/api", createChatRouter(ollamaBaseUrl, dependencies?.chat));
 
   const handleError: ErrorRequestHandler = (error, _request, response, next) => {
     if (error instanceof Error && error.message === corsRejectionMessage) {
