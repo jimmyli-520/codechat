@@ -184,6 +184,7 @@ Setting `HOST=0.0.0.0`, changing `OLLAMA_BASE_URL` to a remote service, or using
 | `npm test` | Run all automated tests |
 | `npm run typecheck` | Type-check both workspaces |
 | `npm run build` | Create frontend and backend production builds |
+| `npm run qa` | Run the dependency audit, tests, type checks, and production builds |
 
 For a reproducible dependency installation in CI or a clean checkout, use `npm ci`.
 
@@ -192,6 +193,8 @@ For a reproducible dependency installation in CI or a clean checkout, use `npm c
 CodeChat uses React, TypeScript, Vite, Monaco Editor, Express, Ollama, and PostgreSQL. It is organized as npm workspaces under `client/` and `server/`.
 
 For component boundaries, request and streaming flows, persistence, security assumptions, design tradeoffs, and known limitations, see [CodeChat 2.0 architecture](docs/ARCHITECTURE.md).
+
+The latest clean-environment verification is recorded in [CodeChat 2.0 release-candidate QA](docs/RELEASE_CANDIDATE_QA.md).
 
 ## Contributing and license
 

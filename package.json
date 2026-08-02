@@ -19,11 +19,12 @@
     "dev:backend": "npm run dev -w server",
     "setup": "npm run setup -w server",
     "build": "npm run build --workspaces",
+    "qa": "npm audit --audit-level=low && npm test && npm run typecheck && npm run build",
     "test": "npm run test --workspaces",
     "typecheck": "npm run typecheck --workspaces"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
+    "concurrently": "^10.0.4",
     "typescript": "^5.7.2"
   },
   "dependencies": {
