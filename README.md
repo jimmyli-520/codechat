@@ -6,6 +6,14 @@ CodeChat keeps an editor and an AI conversation side by side. Ask a general prog
 
 The AI runs through [Ollama](https://ollama.com/) on your computer, and conversation history is stored in your local PostgreSQL database.
 
+![CodeChat demo: opening the workspace and discussing editor code](docs/assets/codechat-demo.gif)
+
+## A code conversation at a glance
+
+| Editor and chat workspace | Code-aware response with local history |
+| --- | --- |
+| ![CodeChat editor beside a new chat](docs/assets/codechat-workspace.png) | ![CodeChat answering a question with editor code included](docs/assets/codechat-conversation.png) |
+
 ## Why CodeChat?
 
 - **Code-aware conversations:** ask “What does this code do?” and CodeChat includes the current editor source when it is relevant.

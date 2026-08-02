@@ -40,3 +40,22 @@ test("keeps setup references and repository paths current", () => {
   assert.match(readme, /Code Reviewer/);
   assert.match(readme, /Code Generator/);
 });
+
+test("includes the verified product screenshots and short demo", () => {
+  const assets = [
+    "docs/assets/codechat-demo.gif",
+    "docs/assets/codechat-welcome.png",
+    "docs/assets/codechat-workspace.png",
+    "docs/assets/codechat-conversation.png"
+  ];
+
+  for (const asset of assets) {
+    const path = resolve(repositoryRoot, asset);
+    assert.equal(existsSync(path), true, `missing README asset: ${asset}`);
+    assert.ok(readFileSync(path).byteLength > 10_000, `README asset is unexpectedly small: ${asset}`);
+  }
+
+  assert.match(readme, /docs\/assets\/codechat-demo\.gif/);
+  assert.match(readme, /docs\/assets\/codechat-workspace\.png/);
+  assert.match(readme, /docs\/assets\/codechat-conversation\.png/);
+});
