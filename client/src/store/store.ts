@@ -22,7 +22,8 @@ import {
   formatErrorMessage,
   initialMessages,
   isVisibleMessage,
-  toChatHistory
+  toChatHistory,
+  toDisplayMessage
 } from "./chatSlice";
 import { canSubmitComposer, getComposerKeyAction } from "./composerKeyboard";
 import { prepareChatMessage } from "./editorContext";
@@ -290,11 +291,7 @@ export function useCodeChatStore() {
       const conversation = await fetchConversation(id);
       const visibleMessages = conversation.messages
         .filter(isVisibleMessage)
-        .map((message) => ({
-          id: message.id,
-          role: message.role,
-          content: message.content
-        }));
+        .map(toDisplayMessage);
 
       shouldStickToBottomRef.current = false;
       shouldResetMessagesScrollRef.current = true;
@@ -601,11 +598,11 @@ export function useCodeChatStore() {
       return;
     }
 
-    const userMessage: Message = {
+    const userMessage: Message = toDisplayMessage({
       id: crypto.randomUUID(),
       role: "user",
       content: trimmedMessage
-    };
+    });
     const assistantMessageId = crypto.randomUUID();
     const assistantMessage: Message = {
       id: assistantMessageId,

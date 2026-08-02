@@ -4,6 +4,8 @@ export type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  editorContextLabel?: string;
+  requestContent?: string;
   status?: "complete" | "failed" | "generating" | "stopped" | "streaming";
 };
 
@@ -77,8 +79,31 @@ export function toChatHistory(messages: Message[]): ChatHistoryMessage[] {
     .filter((message) => message.id !== "welcome" && message.content.trim())
     .map((message) => ({
       role: message.role,
-      content: message.content
+      content: message.requestContent ?? message.content
     }));
+}
+
+const editorContextDisplayPattern = /\n\n\[Editor context included · ([^\]]+)\]\n```/;
+
+export function toDisplayMessage<T extends Pick<Message, "id" | "role" | "content">>(
+  message: T
+): Message {
+  if (message.role !== "user") {
+    return message;
+  }
+
+  const contextMatch = editorContextDisplayPattern.exec(message.content);
+
+  if (!contextMatch || contextMatch.index === 0) {
+    return message;
+  }
+
+  return {
+    ...message,
+    content: message.content.slice(0, contextMatch.index).trim(),
+    editorContextLabel: contextMatch[1],
+    requestContent: message.content
+  };
 }
 
 export function formatErrorMessage(message: string) {

@@ -1,5 +1,6 @@
 import {
   ChevronRight,
+  FileCode2,
   PanelLeftClose,
   PanelLeftOpen,
   Send,
@@ -315,6 +316,13 @@ export function ChatWindow({
             {message.content ? (
               <>
                 <MessageContent message={message} />
+                {message.editorContextLabel ? (
+                  <div className="editor-context-chip">
+                    <FileCode2 aria-hidden="true" size={14} />
+                    <span>Editor code included</span>
+                    <small>{message.editorContextLabel}</small>
+                  </div>
+                ) : null}
                 {message.status === "stopped" ? (
                   <p className="message-status">Stopped</p>
                 ) : message.status === "failed" ? (
